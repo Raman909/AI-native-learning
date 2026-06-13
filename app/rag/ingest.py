@@ -8,12 +8,12 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 try:  # pragma: no cover - optional dependency path
-    from langchain.schema import Document
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_core.documents import Document
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
     from langchain_community.vectorstores import FAISS
     from langchain_huggingface import HuggingFaceEmbeddings
     LANGCHAIN_AVAILABLE = True
-except Exception:  # pragma: no cover - fallback path for local imports
+except Exception as _e:  # pragma: no cover - fallback path for local imports`n    print(f"[WARNING] LangChain import failed: {_e}")
     LANGCHAIN_AVAILABLE = False
 
     @dataclass
