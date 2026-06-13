@@ -1,6 +1,6 @@
 # Python Q&A Assistant
 
-A production-oriented Python question answering assistant built with FastAPI and RAG. It grounds answers in Stack Overflow Python Q&A data and routes between Gemini 1.5 Flash and HuggingFace Mistral-7B for resilient generation.
+A production-oriented Python question answering assistant built with FastAPI and RAG. It grounds answers in Stack Overflow Python Q&A data and routes between Gemini 2.5 Flash and HuggingFace Mistral-7B for resilient generation.
 
 ## Architecture
 
@@ -10,13 +10,13 @@ flowchart LR
     A --> R[FAISS Retriever]
     R --> C[Context Builder]
     C --> L[LLMRouter]
-    L --> G[Gemini 1.5 Flash]
+    L --> G[Gemini 2.5 Flash]
     L --> H[HuggingFace Mistral-7B]
 ```
 
 User -> POST /ask -> FAISS Retriever -> Context -> LLMRouter
 
-LLMRouter prefers Gemini 1.5 Flash first. If Gemini hits its free-tier quota or returns a quota-related error, the router switches to HuggingFace Mistral-7B, then retries Gemini after one hour.
+LLMRouter prefers Gemini 2.5 Flash first. If Gemini hits its free-tier quota or returns a quota-related error, the router switches to HuggingFace Mistral-7B, then retries Gemini after one hour.
 
 ## Fallback Behavior
 

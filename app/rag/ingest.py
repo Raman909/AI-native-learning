@@ -148,14 +148,23 @@ def clean_html(text: str) -> str:
     return BeautifulSoup(text or "", "html.parser").get_text(" ", strip=True)
 
 
+def read_stackoverflow_csv(path: Path) -> pd.DataFrame:
+    for encoding in ("utf-8", "latin-1"):
+        try:
+            return pd.read_csv(path, encoding=encoding)
+        except UnicodeDecodeError:
+            continue
+    raise UnicodeDecodeError("csv", b"", 0, 1, f"Unable to decode dataset file: {path}")
+
+
 def load_qa_pairs(questions_csv: Path, answers_csv: Path, limit: int = 50000) -> list[Document]:
     if not questions_csv.exists():
         raise FileNotFoundError(f"Questions CSV not found: {questions_csv}")
     if not answers_csv.exists():
         raise FileNotFoundError(f"Answers CSV not found: {answers_csv}")
 
-    questions = pd.read_csv(questions_csv)
-    answers = pd.read_csv(answers_csv)
+    questions = read_stackoverflow_csv(questions_csv)
+    answers = read_stackoverflow_csv(answers_csv)
 
     questions = questions.loc[questions["Score"] >= 5].copy()
     answers = answers.loc[answers["Score"] >= 3].copy()

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Q&A Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="page-shell">
+        <div class="orb orb-one"></div>
+        <div class="orb orb-two"></div>
+        <header class="hero">
+            <div class="hero-copy">
+                <p class="eyebrow">Grounded Python help</p>
+                <h1>Ask Python questions and get answers backed by retrieved context.</h1>
+                <p class="hero-text">
+                    This assistant searches indexed Stack Overflow Python discussions, builds context,
+                    and routes generation through Gemini with a HuggingFace fallback.
+                </p>
+                <div class="hero-actions">
+                    <a class="primary-link" href="#qa-panel">Open workspace</a>
+                    <a class="secondary-link" href="/docs" target="_blank" rel="noreferrer">API docs</a>
+                </div>
+            </div>
+            <aside class="status-card">
+                <div class="status-heading">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="status-label">Checking service</span>
+                </div>
+                <dl class="status-grid">
+                    <div>
+                        <dt>Provider</dt>
+                        <dd id="provider-value">...</dd>
+                    </div>
+                    <div>
+                        <dt>Vector store</dt>
+                        <dd id="vector-value">...</dd>
+                    </div>
+                    <div>
+                        <dt>Gemini model</dt>
+                        <dd id="gemini-value">...</dd>
+                    </div>
+                    <div>
+                        <dt>Fallback model</dt>
+                        <dd id="fallback-value">...</dd>
+                    </div>
+                </dl>
+            </aside>
+        </header>
+
+        <main class="workspace">
+            <section class="workspace-panel question-panel" id="qa-panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Question workspace</p>
+                        <h2>Try a Python question</h2>
+                    </div>
+                    <span class="mono-chip">POST /api/v1/ask</span>
+                </div>
+
+                <form id="ask-form" class="ask-form">
+                    <label class="field-label" for="question-input">Question</label>
+                    <textarea
+                        id="question-input"
+                        name="question"
+                        rows="7"
+                        maxlength="500"
+                        placeholder="Example: What causes RecursionError in Python and how do I fix it?"
+                        required
+                    ></textarea>
+
+                    <div class="form-row">
+                        <label class="slider-group" for="max-sources">
+                            <span>Sources to show</span>
+                            <div class="slider-inline">
+                                <input id="max-sources" name="max_sources" type="range" min="1" max="5" value="3">
+                                <output id="max-sources-value" for="max-sources">3</output>
+                            </div>
+                        </label>
+                        <button id="submit-button" type="submit">Ask assistant</button>
+                    </div>
+                </form>
+
+                <div class="examples-block">
+                    <div class="examples-header">
+                        <h3>Suggested prompts</h3>
+                        <button id="refresh-examples" class="ghost-button" type="button">Refresh</button>
+                    </div>
+                    <div id="examples-list" class="examples-list">
+                        <p class="muted">Loading examples...</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="workspace-panel response-panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Answer output</p>
+                        <h2>Response</h2>
+                    </div>
+                    <div class="response-meta">
+                        <span class="mono-chip" id="response-provider">Provider: --</span>
+                        <span class="mono-chip" id="response-time">Time: --</span>
+                    </div>
+                </div>
+
+                <div id="message-banner" class="message-banner hidden" role="status"></div>
+
+                <article id="answer-card" class="answer-card empty">
+                    <p class="empty-state">
+                        Your grounded answer will appear here, along with the retrieved source snippets.
+                    </p>
+                </article>
+
+                <section class="sources-section">
+                    <div class="sources-header">
+                        <h3>Retrieved sources</h3>
+                        <span class="muted" id="sources-count">0 loaded</span>
+                    </div>
+                    <div id="sources-list" class="sources-list">
+                        <p class="muted">No sources yet.</p>
+                    </div>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/app.js" defer></script>
+</body>
+</html>

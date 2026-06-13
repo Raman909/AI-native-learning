@@ -39,13 +39,37 @@ class LLMRouter:
         if self.gemini_api_key:
             genai.configure(api_key=self.gemini_api_key)
         self.hf_api_key = hf_api_key or ""
-        self.gemini_model = gemini_model
+        self.gemini_model = self._normalize_gemini_model(gemini_model)
         self.hf_model = hf_model
         self.active_provider = "gemini"
         self.gemini_quota_reset_time: float | None = None
 
+    def _normalize_gemini_model(self, model_name: str) -> str:
+        normalized = (model_name or "").strip()
+        deprecated_aliases = {
+            "gemini-1.5-flash": "gemini-2.5-flash",
+            "gemini-1.5-flash-8b": "gemini-2.5-flash-lite",
+            "gemini-1.5-pro": "gemini-2.5-pro",
+            "gemini-2.0-flash": "gemini-2.5-flash",
+            "gemini-2.0-flash-001": "gemini-2.5-flash",
+            "gemini-2.0-flash-lite": "gemini-2.5-flash-lite",
+            "gemini-2.0-flash-lite-001": "gemini-2.5-flash-lite",
+        }
+        return deprecated_aliases.get(normalized, normalized or "gemini-2.5-flash")
+
+    def _gemini_candidates(self) -> list[str]:
+        candidates = [
+            self._normalize_gemini_model(self.gemini_model),
+            "gemini-2.5-flash",
+            "gemini-2.5-flash-lite",
+        ]
+        deduped: list[str] = []
+        for candidate in candidates:
+            if candidate not in deduped:
+                deduped.append(candidate)
+        return deduped
+
     def _call_gemini(self, prompt: str) -> str:
-        model = genai.GenerativeModel(self.gemini_model)
         generation_config = {"temperature": 0.2, "max_output_tokens": 1024}
         safety_settings = [
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -53,12 +77,26 @@ class LLMRouter:
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ]
-        response = model.generate_content(
-            prompt,
-            generation_config=generation_config,
-            safety_settings=safety_settings,
-        )
-        return response.text
+        last_exception: Exception | None = None
+
+        for candidate in self._gemini_candidates():
+            try:
+                model = genai.GenerativeModel(candidate)
+                response = model.generate_content(
+                    prompt,
+                    generation_config=generation_config,
+                    safety_settings=safety_settings,
+                )
+                self.gemini_model = candidate
+                return response.text
+            except Exception as exception:
+                last_exception = exception
+                if "not found" not in str(exception).lower():
+                    raise
+
+        if last_exception is not None:
+            raise last_exception
+        raise RuntimeError("No Gemini model candidates available")
 
     def _call_huggingface(self, prompt: str) -> str:
         url = f"https://api-inference.huggingface.co/models/{self.hf_model}"
