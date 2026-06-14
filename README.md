@@ -2,7 +2,7 @@
 
 A production-oriented Python question answering assistant built with FastAPI and RAG. It grounds answers in Stack Overflow Python Q&A data and routes between Gemini 2.0 Flash and HuggingFace Mistral-7B for resilient generation.
 
-**Live Demo:** https://ai-native-learning.onrender.com  
+**Live Demo:** https://ai-native-learning.onrender.com
 **GitHub:** https://github.com/Raman909/AI-native-learning
 
 ---
