@@ -72,8 +72,8 @@ python scripts/build_index.py --data-dir data --output-dir vector_store --limit 
 uvicorn app.main:app --reload --port 8000
 ```
 
-The API will be available at `http://localhost:8000`.  
-Interactive docs at `http://localhost:8000/docs`.
+API available at `http://localhost:8000`  
+Interactive Swagger docs at `http://localhost:8000/docs`
 
 ---
 
@@ -93,33 +93,124 @@ VECTOR_STORE_PATH=vector_store
 
 ## API Reference
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/` | GET | Service landing response |
-| `/api/v1/health` | GET | Health check and active LLM status |
-| `/api/v1/llm-status` | GET | Current LLM router state |
-| `/api/v1/examples` | GET | Five sample Python questions |
-| `/api/v1/ask` | POST | Retrieve grounded answers from the vector store |
+Base URL (production): `https://ai-native-learning.onrender.com`  
+Base URL (local): `http://localhost:8000`
 
-### Example Request
+---
 
+### `GET /`
+Landing page — returns the React frontend UI.
+
+---
+
+### `GET /api/v1/health`
+Health check. Returns current status and which LLM provider is active.
+
+**Request**
+```bash
+curl https://ai-native-learning.onrender.com/api/v1/health
+```
+
+**Response**
+```json
+{
+  "status": "healthy",
+  "llm_status": {
+    "current_provider": "gemini",
+    "gemini_available": true,
+    "fallback_available": true
+  },
+  "vector_store": "loaded"
+}
+```
+
+---
+
+### `GET /api/v1/llm-status`
+Returns detailed LLM router state — which provider is active and whether fallback is available.
+
+**Request**
+```bash
+curl https://ai-native-learning.onrender.com/api/v1/llm-status
+```
+
+**Response**
+```json
+{
+  "current_provider": "gemini",
+  "gemini_available": true,
+  "fallback_available": true
+}
+```
+
+---
+
+### `GET /api/v1/examples`
+Returns 5 sample Python questions you can use to test the `/ask` endpoint.
+
+**Request**
+```bash
+curl https://ai-native-learning.onrender.com/api/v1/examples
+```
+
+**Response**
+```json
+[
+  "How do I reverse a list in Python?",
+  "How to handle missing values in a pandas DataFrame?",
+  "What causes RecursionError in Python and how do I fix it?",
+  "How do I implement multiple inheritance in Python?",
+  "What is the fastest way to read a large CSV file in Python?"
+]
+```
+
+---
+
+### `POST /api/v1/ask`
+Main endpoint. Accepts a Python question and returns a grounded answer retrieved from Stack Overflow data.
+
+**Request**
 ```bash
 curl -X POST https://ai-native-learning.onrender.com/api/v1/ask \
   -H "Content-Type: application/json" \
   -d '{"question": "How do I reverse a list in Python?", "max_sources": 3}'
 ```
 
-### Example Response
-
+**Request Body**
 ```json
 {
   "question": "How do I reverse a list in Python?",
-  "answer": "You can reverse a list using my_list.reverse() or my_list[::-1]...",
-  "sources": [...],
-  "provider_used": "gemini",
-  "processing_time_ms": 3915
+  "max_sources": 3
 }
 ```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `question` | string | Yes | A Python-related question |
+| `max_sources` | integer | No | Number of source documents to retrieve (default: 3) |
+
+**Response**
+```json
+{
+  "question": "How do I reverse a list in Python?",
+  "answer": "You can reverse a list using my_list.reverse() which modifies in-place, or my_list[::-1] which returns a new list...",
+  "sources": [
+    {
+      "content": "def reversed_lines(file): ..."
+    }
+  ],
+  "model": "gemini-2.0-flash",
+  "provider_used": "gemini",
+  "processing_time_ms": 3915.6
+}
+```
+
+**Error Responses**
+
+| Status | Description |
+|---|---|
+| `422` | Question too short, too long, or missing |
+| `503` | Both Gemini and HuggingFace providers unavailable |
 
 ---
 
@@ -129,9 +220,10 @@ curl -X POST https://ai-native-learning.onrender.com/api/v1/ask \
 pytest tests/ -v
 ```
 
-To run the evaluation notebook:
+To execute the evaluation notebook:
 ```bash
-jupyter nbconvert --to notebook --execute notebooks/test_results.ipynb --output test_results.ipynb --output-dir notebooks
+jupyter nbconvert --to notebook --execute notebooks/test_results.ipynb \
+  --output test_results.ipynb --output-dir notebooks
 ```
 
 ---
@@ -145,8 +237,9 @@ Deployed on **Render** using the included `Dockerfile`.
 To deploy your own instance:
 1. Fork this repo
 2. Connect to [Render](https://render.com) → New Web Service → Select repo
-3. Set environment variables in Render dashboard
-4. Deploy — Render auto-detects the Dockerfile
+3. Set environment variables in Render dashboard (same as `.env.example`)
+4. Set Docker Command: `uvicorn app.main:app --host 0.0.0.0 --port 10000`
+5. Deploy — Render auto-detects the Dockerfile
 
 ---
 
